@@ -4,8 +4,6 @@ const statusCode = require("../../../constants/statusCode");
 const responseMessage = require("../../../constants/responseMessage");
 const request = require("request");
 const util = require("../../../lib/util");
-const util1 = require("util");
-
 module.exports = async (req, res) => {
   const {
     startX,
@@ -34,7 +32,7 @@ module.exports = async (req, res) => {
     request.post(
       {
         headers: {
-          appKey: "l7xxfc242ed17fd0469ea6bcd2c49459a99c",
+          appKey: process.env.APP_KEY,
           "content-type": "application/json",
         },
         url: "https://apis.openapi.sk.com/tmap/routes/pedestrian",
