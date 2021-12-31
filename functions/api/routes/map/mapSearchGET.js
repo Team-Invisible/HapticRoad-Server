@@ -7,13 +7,12 @@ const util = require("../../../lib/util");
 const fetch = require("node-fetch");
 
 module.exports = async (req, res) => {
-  const { searchKeyword } = req.query;
-  const {} = req.query;
+  const { searchKeyword, centerLon, centerLat } = req.query;
 
   try {
     let hello;
     let list = await fetch(
-      `https://apis.openapi.sk.com/tmap/pois?searchKeyword=${searchKeyword}`,
+      `https://apis.openapi.sk.com/tmap/pois?searchKeyword=${searchKeyword}&searchtypCd=R&radius=5&centerLon=${centerLon}&centerLat=${centerLat}`,
       {
         method: "GET",
         headers: {
