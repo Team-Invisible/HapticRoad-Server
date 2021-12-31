@@ -4,6 +4,8 @@ const statusCode = require("../../../constants/statusCode");
 const responseMessage = require("../../../constants/responseMessage");
 const request = require("request");
 const util = require("../../../lib/util");
+const fetch = require("node-fetch");
+
 module.exports = async (req, res) => {
   const {
     startX,
@@ -28,15 +30,15 @@ module.exports = async (req, res) => {
     let pedestrian;
     let totalDistance;
     let totalTime;
-
-    request.post(
+    pedestrian = await fetch(
+      "https://apis.openapi.sk.com/tmap/routes/pedestrian",
       {
+        method: "POST",
         headers: {
           appKey: process.env.APP_KEY,
           "content-type": "application/json",
         },
-        url: "https://apis.openapi.sk.com/tmap/routes/pedestrian",
-        body: {
+        body: JSON.stringify({
           startX,
           startY,
           angle,
@@ -48,74 +50,68 @@ module.exports = async (req, res) => {
           endName,
           searchOption,
           resCoordType,
-        },
-        json: true,
-      },
-      function (error, response, body) {
-        pedestrian = body.features.map((o, idx) => {
+        }),
+      }
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        pedestrian = data.features.map((o, idx) => {
           if (o.geometry.type == "Point") {
             if (idx === 0) {
               totalDistance = o.properties.totalDistance;
               totalTime = o.properties.totalTime;
             }
             return {
-              type: o.type,
-              geometry: {
-                type: o.geometry.type,
-                coordinates: o.geometry.coordinates,
-              },
-              properties: {
-                index: o.properties.index,
-                pointIndex: o.properties.pointIndex,
-                lineIndex: null,
-                name: o.properties.name,
-                description: o.properties.description,
-                distance: null,
-                time: null,
-                direction: o.properties.direction,
-                facilityType: o.properties.facilityType,
-                facilityName: o.properties.facilityName,
-                turnType: o.properties.turnType,
-              },
+              type: o.geometry.type,
+              coordinates: o.geometry.coordinates,
+              index: o.properties.index,
+              pointIndex: o.properties.pointIndex,
+              lineIndex: null,
+              name: o.properties.name,
+              description: o.properties.description,
+              distance: null,
+              time: null,
+              direction: o.properties.direction,
+              facilityType: o.properties.facilityType,
+              facilityName: o.properties.facilityName,
+              turnType: o.properties.turnType,
             };
           } else if (o.geometry.type == "LineString") {
             let coordinates = o.geometry.coordinates;
-            if (coordinates.length !== 2) {
+            if (coordinates.length >= 2) {
               coordinates = [
-                coordinates[0],
-                coordinates[coordinates.length - 1],
+                ...coordinates[0],
+                ...coordinates[coordinates.length - 1],
               ];
             }
+
             return {
-              type: o.type,
-              geometry: {
-                type: o.geometry.type,
-                coordinates: coordinates,
-              },
-              properties: {
-                index: o.properties.index,
-                pointIndex: null,
-                lineIndex: o.properties.lineIndex,
-                name: o.properties.name,
-                description: o.properties.description,
-                distance: o.properties.distance,
-                time: o.properties.time,
-                direction: null,
-                facilityType: o.properties.facilityType,
-                facilityName: o.properties.facilityName,
-                turnType: null,
-              },
+              type: o.geometry.type,
+              coordinates: coordinates,
+              index: o.properties.index,
+              pointIndex: null,
+              lineIndex: o.properties.lineIndex,
+              name: o.properties.name,
+              description: o.properties.description,
+              distance: o.properties.distance,
+              time: o.properties.time,
+              direction: null,
+              facilityType: o.properties.facilityType,
+              facilityName: o.properties.facilityName,
+              turnType: null,
             };
           }
         });
-        res.status(statusCode.OK).send(
-          util.success(statusCode.OK, "성공", {
-            pedestrian,
-            totalDistance,
-            totalTime,
-          })
-        );
-      }
+
+        return pedestrian;
+      });
+
+    res.status(statusCode.OK).send(
+      util.success(statusCode.OK, "성공", {
+        pedestrian,
+        totalDistance,
+        totalTime,
+      })
     );
   } catch (error) {
     functions.logger.error(
